@@ -1,4 +1,4 @@
-name: Android CI (Build APK)
+name: Build Android APK (Capacitor)
 
 on:
   push:
@@ -14,21 +14,37 @@ jobs:
     - name: Checkout le code source
       uses: actions/checkout@v4
 
+    - name: Configurer Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+
     - name: Configurer Java JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
+
+    - name: Installer les dépendances Node.js
+      run: npm ci
+
+    - name: Build de l'application Web (Vite)
+      run: npm run build
+
+    - name: Synchroniser le build web avec Capacitor
+      run: npx cap sync android
 
     - name: Accorder les permissions d'exécution à Gradlew
-      run: chmod +x gradlew
+      run: chmod +x android/gradlew
 
-    - name: Build de l'APK (Debug)
-      run: ./gradlew assembleDebug
+    - name: Build de l'APK Android (Debug)
+      run: |
+        cd android
+        ./gradlew assembleDebug
 
     - name: Téléverser l'APK généré
       uses: actions/upload-artifact@v4
       with:
         name: morocco-smart-guide-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
