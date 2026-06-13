@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Utilisateur Validation
+    function isValidUtilisateur(data) {
+      return data.keys().hasAll(['email', 'createdAt'])
+        && data.email is string
+        && data.createdAt is number
+        && (data.get('displayName', '') is string)
+        && (data.get('photoURL', '') is string)
+        && (data.get('role', 'user') is string);
+    }
+
+    match /utilisateurs/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin(); // Only admins can list users
+      allow create: if isSignedIn() 
+        && request.auth.uid == userId 
+        && isValidId(userId)
+        && isValidUtilisateur(incoming());
+      allow update: if isSignedIn() 
+        && request.auth.uid == userId 
+        && isValidUtilisateur(incoming())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL']);
+    }
+
+    // Monument Validation
+    function isValidMonument(data) {
+      return data.keys().hasAll(['nom', 'ville', 'latitude', 'longitude', 'categorie'])
+        && data.nom is string && data.nom.size() <= 200
+        && data.ville is string && data.ville.size() <= 100
+        && data.latitude is number
+        && data.longitude is number
+        && data.categorie is string && data.categorie.size() <= 100
+        && (data.get('description', '') is string)
+        && (data.get('histoire', '') is string)
+        && (data.get('horaires', '') is string)
+        && (data.get('tarif', '') is string)
+        && (data.get('accessibilite', '') is string)
+        && (data.get('dureeVisite', '') is string)
+        && (data.get('images', []) is list)
+        && (data.get('audioGuide', '') is string)
+        && (data.get('noteMoyenne', 0) is number);
+    }
+
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /monuments_v2/{monumentId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Favori Validation
+    function isValidFavori(data) {
+      return data.keys().hasAll(['userId', 'monumentId', 'createdAt'])
+        && data.userId is string
+        && data.userId == request.auth.uid
+        && data.monumentId is string
+        && data.createdAt is number;
+    }
+
+    match /favoris/{favoriId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() 
+        && isValidId(favoriId)
+        && isValidFavori(incoming())
+        && exists(/databases/$(database)/documents/monuments_v2/$(incoming().monumentId));
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Admins Table
+    match /admins/{adminId} {
+      allow read: if false; // Only checked internally by exists()
+      allow write: if false; // Set manually via Firebase Console
+    }
+  }
+}

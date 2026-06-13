@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "Utilisateur": {
+      "title": "Utilisateur",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Monument": {
+      "title": "Monument",
+      "description": "Information about a monument",
+      "type": "object",
+      "properties": {
+        "nom": { "type": "string" },
+        "ville": { "type": "string" },
+        "region": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "categorie": { "type": "string" },
+        "description": { "type": "string" },
+        "histoire": { "type": "string" },
+        "horaires": { "type": "string" },
+        "tarif": { "type": "string" },
+        "accessibilite": { "type": "string" },
+        "dureeVisite": { "type": "string" },
+        "images": { "type": "array" },
+        "audioGuide": { "type": "string" },
+        "noteMoyenne": { "type": "number" }
+      },
+      "required": ["nom", "ville", "latitude", "longitude", "categorie"]
+    },
+    "Favori": {
+      "title": "Favori",
+      "description": "User's favorite monument",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "monumentId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "monumentId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "utilisateurs/{userId}": {
+      "schema": { "$ref": "#/entities/Utilisateur" },
+      "description": "Users collection"
+    },
+    "monuments/{monumentId}": {
+      "schema": { "$ref": "#/entities/Monument" },
+      "description": "Monuments collection"
+    },
+    "favoris/{favoriId}": {
+      "schema": { "$ref": "#/entities/Favori" },
+      "description": "Favorites collection"
+    }
+  }
+}

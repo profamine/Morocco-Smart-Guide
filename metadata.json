@@ -1,0 +1,6 @@
+{
+  "name": "Morocco Smart Guide",
+  "description": "L'application de guide touristique intelligent du Maroc, avec détection de proximité locale.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
